@@ -1,14 +1,14 @@
 //
 //  BuiltinRegistry+applyBinding.swift
-//  
+//
 //
 //  Created by Carson Katri on 3/2/23.
 //
 
-import SwiftUI
 import LiveViewNativeCore
+import SwiftUI
 
-public enum _EventBinding: String {
+public enum _EventBinding: String, Sendable {
     case windowFocus = "phx-window-focus"
     case windowBlur = "phx-window-blur"
     case focus = "phx-focus"
@@ -32,13 +32,17 @@ extension BuiltinRegistry {
         ) {
             switch binding {
             case .windowFocus:
-                ScenePhaseObserver(content: view, target: .active, type: "focus", event: event, value: value)
+                ScenePhaseObserver(
+                    content: view, target: .active, type: "focus", event: event, value: value)
             case .windowBlur:
-                ScenePhaseObserver(content: view, target: .background, type: "blur", event: event, value: value)
+                ScenePhaseObserver(
+                    content: view, target: .background, type: "blur", event: event, value: value)
             case .focus:
-                FocusObserver(content: view, target: true, type: "focus", event: event, value: value)
+                FocusObserver(
+                    content: view, target: true, type: "focus", event: event, value: value)
             case .blur:
-                FocusObserver(content: view, target: false, type: "blur", event: event, value: value)
+                FocusObserver(
+                    content: view, target: false, type: "blur", event: event, value: value)
             case .click:
                 TapGestureView(content: view, type: "click", event: event, value: value)
             }
@@ -57,12 +61,12 @@ public enum _ProvidedBindingsKey: PreferenceKey {
     }
 }
 
-fileprivate struct ProvidedBindingsReader<Content: View, ApplyBinding: View>: View {
+private struct ProvidedBindingsReader<Content: View, ApplyBinding: View>: View {
     let binding: _EventBinding
     let content: Content
     @ViewBuilder let applyBinding: () -> ApplyBinding
     @State private var providesBinding: Bool = false
-    
+
     var body: some View {
         SwiftUI.Group {
             if providesBinding {
@@ -72,26 +76,26 @@ fileprivate struct ProvidedBindingsReader<Content: View, ApplyBinding: View>: Vi
             }
         }
         .onPreferenceChange(_ProvidedBindingsKey.self) { [$providesBinding] value in
-            $providesBinding.wrappedValue = value.contains(binding)
+                $providesBinding.wrappedValue = value.contains(binding)
         }
     }
 }
 
-fileprivate struct ScenePhaseObserver<Content: View>: View {
+private struct ScenePhaseObserver<Content: View>: View {
     @Environment(\.scenePhase) var scenePhase
-    
+
     let content: Content
     let target: ScenePhase
     let _event: Event
     let value: Payload
-    
+
     init(content: Content, target: ScenePhase, type: String, event: String, value: Payload) {
         self.content = content
         self.target = target
         self._event = .init(event: event, type: type)
         self.value = value
     }
-    
+
     var body: some View {
         content
             .onChange(of: scenePhase) { newValue in
@@ -101,21 +105,21 @@ fileprivate struct ScenePhaseObserver<Content: View>: View {
     }
 }
 
-fileprivate struct FocusObserver<Content: View>: View {
+private struct FocusObserver<Content: View>: View {
     @FocusState private var isFocused: Bool
-    
+
     let content: Content
     let target: Bool
     let _event: Event
     let value: Payload
-    
+
     init(content: Content, target: Bool, type: String, event: String, value: Payload) {
         self.content = content
         self.target = target
         self._event = .init(event: event, type: type)
         self.value = value
     }
-    
+
     var body: some View {
         content
             .focused($isFocused)
@@ -126,17 +130,17 @@ fileprivate struct FocusObserver<Content: View>: View {
     }
 }
 
-fileprivate struct TapGestureView<Content: View>: View {
+private struct TapGestureView<Content: View>: View {
     let content: Content
     let _event: Event
     let value: Payload
-    
+
     init(content: Content, type: String, event: String, value: Payload) {
         self.content = content
         self._event = .init(event: event, type: type)
         self.value = value
     }
-    
+
     var body: some View {
         content
             .onTapGesture {
